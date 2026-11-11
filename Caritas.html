@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fondazione Solidarietà Caritas Firenze - Rendicontazione PA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter & Segoe UI style alternative -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        caritas: {
+                            red: '#A81C1C',
+                            darkred: '#7A1313',
+                            lightred: '#FDF2F2',
+                            gray: '#F4F5F7',
+                            dark: '#1E293B',
+                            telerikHeader: '#E8EEF5',
+                            telerikBorder: '#CBD5E1',
+                            telerikAccent: '#0284C7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Segoe UI', 'Tahoma', 'sans-serif'],
+                        report: ['Segoe UI', 'Arial', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Stili Telerik Report Viewer */
+        .telerik-viewer-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+        }
+        
+        .telerik-table-header {
+            background: linear-gradient(180deg, #F8FAFC 0%, #E2E8F0 100%);
+            border-bottom: 2px solid #94A3B8;
+        }
+
+        .telerik-row-alt {
+            background-color: #F8FAFC;
+        }
+
+        .telerik-row:hover {
+            background-color: #F1F5F9;
+        }
+
+        .telerik-total-row {
+            border-top: 2px solid #475569;
+            border-bottom: 4px double #475569;
+            font-weight: 700;
+        }
+
+        /* Stili per Stampa / PDF */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .report-page-container {
+                box-shadow: none !important;
+                border: none !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            @page {
+                size: A4 landscape;
+                margin: 12mm;
+            }
+        }
+
+        /* Scrollbar personalizzata per il visualizzatore report */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- HEADER AZIENDALE CARITAS FIRENZE -->
+    <header class="bg-caritas-red text-white shadow-md no-print border-b-4 border-caritas-darkred">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-4">
+                <div class="bg-white p-2 rounded-lg shadow-sm flex items-center justify-center w-12 h-12">
+                    <i class="fa-solid font-bold text-caritas-red text-2xl">┼</i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight leading-tight">Fondazione Solidarietà Caritas Firenze</h1>
+                    <p class="text-xs text-red-100 font-medium">Portale Controllo di Gestione & Rendicontazione Fatture PA</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 text-xs bg-caritas-darkred/40 px-3 py-1.5 rounded-lg border border-red-400/30">
+                <i class="fa-solid fa-user-shield text-red-200 text-sm"></i>
+                <div>
+                    <span class="block font-semibold">Ufficio Controlling & Rendicontazione</span>
+                    <span class="text-red-200">Operatore: Controller PA</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENUTO PRINCIPALE -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- PANNELLO FILTRI RENDICONTAZIONE (NO PRINT) -->
+        <section class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden no-print transition-all">
+            <div class="bg-slate-800 text-white px-5 py-3 flex justify-between items-center">
+                <h2 class="text-sm font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-filter text-caritas-red bg-white p-1 rounded-full text-xs"></i>
+                    Pannello Filtri Estratto Conto per Rendicontazione PA
+                </h2>
+                <span id="filter-badge-status" class="text-xs bg-slate-700 text-slate-200 px-2.5 py-1 rounded-full font-mono">
+                    Modalità: Estratto Conto Standard
+                </span>
+            </div>
+            
+            <form id="filterForm" onsubmit="applyFilters(event)" class="p-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Filtro Commessa -->
+                    <div>
+                        <label for="commessa" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Commessa / Progetto PA
+                        </label>
+                        <select id="commessa" onchange="updateFornitoreOptions()" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red transition-all">
+                            <option value="ALL">-- Tutte le Commesse (Standard) --</option>
+                            <option value="ACC_2026">Accoglienza Straordinaria 2026 (CIG: Z123456789)</option>
+                            <option value="MENSA_FI">Mensa Cittadina S. Francesco (CUP: B987654321)</option>
+                            <option value="EMERG_ABIT">Emergenza Abitativa Comune FI (CIG: 9876543210)</option>
+                            <option value="EMERG_FREDDO">Piano Freddo Invernale (CIG: 4567891230)</option>
+                        </select>
+                    </div>
+
+                    <!-- Filtro Fornitore -->
+                    <div>
+                        <label for="fornitore" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Fornitore
+                        </label>
+                        <select id="fornitore" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red transition-all">
+                            <option value="ALL">-- Tutti i Fornitori (Standard) --</option>
+                            <option value="FORN_01">Cooperativa Servizi Toscana Soc. Coop.</option>
+                            <option value="FORN_02">Forniture Alimentari Fiorentine Srl</option>
+                            <option value="FORN_03">Toscana Energia & Servizi SpA</option>
+                            <option value="FORN_04">Consorzio Manutenzioni & Edilizia</option>
+                            <option value="FORN_05">Catering Solidale Italia</option>
+                        </select>
+                    </div>
+
+                    <!-- Date Range: Data Da -->
+                    <div>
+                        <label for="dateFrom" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Data Pagamento Da
+                        </label>
+                        <input type="date" id="dateFrom" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red transition-all">
+                    </div>
+
+                    <!-- Date Range: Data A -->
+                    <div>
+                        <label for="dateTo" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
+                            Data Pagamento A
+                        </label>
+                        <input type="date" id="dateTo" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red transition-all">
+                    </div>
+                </div>
+
+                <!-- Bottoni Azione Filtri -->
+                <div class="mt-4 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center gap-3">
+                    <div class="text-xs text-slate-500 italic">
+                        <i class="fa-solid fa-circle-info text-blue-500 mr-1"></i>
+                        Seleziona Commessa e Fornitore per l'isolamento puntuale della fattura da inviare in rendicontazione.
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="resetFilters()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-xs transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate-left"></i> Reset (E/C Standard)
+                        </button>
+                        <button type="submit" class="px-5 py-2 bg-caritas-red hover:bg-caritas-darkred text-white font-medium rounded-lg text-xs shadow-sm transition-colors flex items-center gap-1.5">
+                            <i class="fa-solid fa-magnifying-glass"></i> Genera Estratto Conto PA
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- CONTENITORE REPORT VIEWER STILE TELERIK REPORTING -->
+        <section class="bg-slate-700 rounded-xl overflow-hidden shadow-xl border border-slate-600 flex flex-col">
+            
+            <!-- TOOLBAR UPPER STILE TELERIK KENDO REPORT VIEWER (NO PRINT) -->
+            <div class="bg-slate-800 border-b border-slate-700 px-4 py-2.5 flex flex-wrap items-center justify-between text-slate-300 text-xs no-print select-none gap-2">
+                <!-- Paginazione e Navigation -->
+                <div class="flex items-center gap-2">
+                    <button title="Prima Pagina" class="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-step-backward"></i></button>
+                    <button title="Pagina Precedente" class="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-caret-left text-sm"></i></button>
+                    <span class="px-2 text-slate-400">Pagina <strong class="text-white">1</strong> di <strong class="text-white" id="total-pages">1</strong></span>
+                    <button title="Pagina Successiva" class="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-caret-right text-sm"></i></button>
+                    <button title="Ultima Pagina" class="p-1.5 hover:bg-slate-700 rounded text-slate-400 hover:text-white transition"><i class="fa-solid fa-step-forward"></i></button>
+                    
+                    <div class="h-4 w-px bg-slate-700 mx-1"></div>
+                    
+                    <!-- Zoom Controller -->
+                    <div class="flex items-center gap-1">
+                        <button title="Zoom Out" onclick="changeZoom(-10)" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-magnifying-glass-minus"></i></button>
+                        <span id="zoom-level" class="w-12 text-center font-mono text-slate-200">100%</span>
+                        <button title="Zoom In" onclick="changeZoom(10)" class="p-1.5 hover:bg-slate-700 rounded text-slate-300"><i class="fa-solid fa-magnifying-glass-plus"></i></button>
+                    </div>
+                </div>
+
+                <!-- Telerik Status Badge & Quick Actions -->
+                <div class="flex items-center gap-3">
+                    <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-medium bg-slate-900/80 text-emerald-400 border border-emerald-500/30">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Telerik Report Engine v17.2 • Pronto
+                    </span>
+
+                    <div class="h-4 w-px bg-slate-700"></div>
+
+                    <!-- Pulsanti Azione Esportazione -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="triggerPrint()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded font-medium shadow-sm transition flex items-center gap-1.5 border border-slate-600">
+                            <i class="fa-solid fa-file-pdf text-red-400"></i> Scarica / Stampa PDF
+                        </button>
+                        <button onclick="openMailModal()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded font-medium shadow-sm transition flex items-center gap-1.5 border border-blue-500">
+                            <i class="fa-solid fa-paper-plane"></i> Invia via Email a PA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AREA FOGLIO REPORT (TELERIK STYLED DOCUMENT CONTAINER) -->
+            <div class="p-4 sm:p-8 overflow-x-auto flex justify-center bg-slate-600/70 min-h-[600px]">
+                
+                <!-- DOCUMENTO FOGLIO A4 (STAMPABILE) -->
+                <div id="report-paper" class="report-page-container bg-white text-slate-900 w-full max-w-5xl rounded-sm shadow-2xl p-8 sm:p-12 transition-transform origin-top font-report relative border border-slate-300">
+                    
+                    <!-- WATERMARK CARITAS SFONDO -->
+                    <div class="absolute inset-0 flex items-center justify-center opacity-[0.02] pointer-events-none select-none">
+                        <i class="fa-solid font-bold text-slate-900 text-[350px]">┼</i>
+                    </div>
+
+                    <!-- HEADER INTESTAZIONE REPORT -->
+                    <div class="border-b-2 border-slate-800 pb-5 mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="border-2 border-caritas-red p-2.5 rounded text-caritas-red flex items-center justify-center w-14 h-14">
+                                <i class="fa-solid font-bold text-3xl">┼</i>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold uppercase tracking-tight text-slate-900">Fondazione Solidarietà Caritas Firenze</h2>
+                                <p class="text-xs text-slate-600">Via de' Pucci, 2 - 50122 Firenze (FI) | Cod. Fiscale: 05128390487</p>
+                                <p class="text-xs text-slate-600">PEC: rendicontazione.pa@pec.caritasfirenze.it | Tel: 055 267701</p>
+                            </div>
+                        </div>
+                        <div class="text-left sm:text-right border-l-2 sm:border-l-0 sm:border-r-2 border-caritas-red pl-3 sm:pl-0 sm:pr-3 py-1">
+                            <div class="text-xs font-bold uppercase tracking-widest text-slate-500">Documento Ufficiale</div>
+                            <div id="report-title-badge" class="text-base font-extrabold text-caritas-red">ESTRATTO CONTO FATTURE PA</div>
+                            <div class="text-xs font-mono text-slate-600" id="report-gen-date">Data emissione: 11/11/2026</div>
+                        </div>
+                    </div>
+
+                    <!-- METADATI COMMESSA E ENTE PA (DINAMICI) -->
+                    <div class="bg-slate-50 border border-slate-300 rounded p-4 mb-6 text-xs grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="block text-slate-400 uppercase font-semibold text-[10px] tracking-wider mb-0.5">Ente Finanziatore / P.A. Destinataria</span>
+                            <div class="font-bold text-slate-800 text-sm" id="meta-pa">Comune di Firenze - Direzione Servizi Sociali</div>
+                            <div class="text-slate-600" id="meta-pa-sub">Servizio Accoglienza e Inclusioni Sociali</div>
+                        </div>
+                        <div>
+                            <span class="block text-slate-400 uppercase font-semibold text-[10px] tracking-wider mb-0.5">Riferimento Progetto / Commessa</span>
+                            <div class="font-bold text-slate-800 text-sm" id="meta-commessa">Tutte le Commesse Attive</div>
+                            <div class="font-mono text-slate-600 mt-0.5" id="meta-cig-cup">CIG: N.D. | CUP: N.D.</div>
+                        </div>
+                        <div class="md:col-span-2 pt-2 border-t border-slate-200 flex flex-wrap justify-between text-slate-600">
+                            <div><strong>Fornitore Selezionato:</strong> <span id="meta-fornitore">Tutti i Fornitori (E/C Globale)</span></div>
+                            <div><strong>Periodo Rendicontato:</strong> <span id="meta-periodo">Tutti i movimenti a sistema</span></div>
+                        </div>
+                    </div>
+
+                    <!-- TABELLA MOVIMENTI TELEREPORTING STYLE -->
+                    <div class="overflow-x-auto mb-6">
+                        <table class="w-full text-left text-xs border-collapse border border-slate-300">
+                            <thead>
+                                <tr class="telerik-table-header text-slate-800">
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">Data Pag.</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">N. Fattura</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">Data Fatt.</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">Fornitore / Denominazione</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">Descrizione Prestazione</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider text-right">Importo (€)</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider">Estremi Pagamento (TRN/CRO)</th>
+                                    <th class="p-2.5 border border-slate-300 font-bold uppercase text-[10px] tracking-wider text-center">Stato</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-table-body" class="divide-y divide-slate-200">
+                                <!-- Contenuto generato dinamicamente via JS -->
+                            </tbody>
+                            <tfoot>
+                                <!-- RIGA TOTALI -->
+                                <tr class="telerik-total-row bg-slate-100 text-slate-900">
+                                    <td colspan="5" class="p-3 border border-slate-300 text-right uppercase tracking-wider font-bold text-xs">
+                                        Totale Generale Rendicontato:
+                                    </td>
+                                    <td class="p-3 border border-slate-300 text-right font-bold text-sm text-caritas-darkred font-mono" id="table-total-amount">
+                                        € 0,00
+                                    </td>
+                                    <td colspan="2" class="p-3 border border-slate-300 text-slate-600 text-[11px] font-normal italic">
+                                        Fatture certificate e liquidate da c/c dedicato PA
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- ATTESTAZIONE DI CONFORMITA E TIMBRO/FIRMA -->
+                    <div class="mt-10 pt-6 border-t border-slate-300 text-xs text-slate-700 grid grid-cols-1 md:grid-cols-2 gap-8 page-break-inside-avoid">
+                        <div>
+                            <h4 class="font-bold text-slate-900 uppercase text-[11px] mb-1">Dichiarazione di Conformità Operativa</h4>
+                            <p class="text-[11px] text-slate-600 leading-relaxed">
+                                Si attesta che le fatture sopra elencate ed i relativi pagamenti identificati dai codici TRN/CRO indicati si riferiscono unicamente alle spese sostenute per l'esecuzione della commessa/progetto citato, ed i relativi importi sono stati integralmente saldati a mezzo bonifico bancario su conto corrente dedicato.
+                            </p>
+                        </div>
+                        <div class="flex flex-col justify-end items-end text-center">
+                            <div class="w-64 border-b border-slate-400 pb-1 mb-1 font-semibold text-slate-800">
+                                Il Controller Fondazione Caritas
+                            </div>
+                            <span class="text-[10px] text-slate-500 italic">Firma autografa o digitale ai sensi del CAD</span>
+                        </div>
+                    </div>
+
+                    <!-- FOOTER TELERIK PAGE NUMBER & CONFIDENTIALITY -->
+                    <div class="mt-12 pt-3 border-t border-slate-200 text-[10px] text-slate-400 flex justify-between items-center font-mono">
+                        <div>Fondazione Solidarietà Caritas Firenze - Sistema Gestionale Rendicontazione PA v4.2</div>
+                        <div>Pagina 1 di 1</div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER DI PAGINA (NO PRINT) -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-8 no-print">
+        <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+            Fondazione Solidarietà Caritas di Firenze - Ente del Terzo Settore | Servizio Controllo di Gestione
+        </div>
+    </footer>
+
+    <!-- MODALE INVIO EMAIL / PEC ALLA PA (NO PRINT) -->
+    <div id="mailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden no-print">
+        <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full border border-slate-200 overflow-hidden transform transition-all">
+            <!-- Modal Header -->
+            <div class="bg-caritas-red text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> Transmissione Rendicontazione PA
+                </h3>
+                <button onclick="closeMailModal()" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <!-- Modal Form -->
+            <form id="mailForm" onsubmit="sendEmail(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Destinatario PEC / Email PA</label>
+                    <input type="email" id="emailTo" required value="rendicontazione.sociale@pec.comune.fi.it" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Oggetto Transmissione</label>
+                    <input type="text" id="emailSubject" required class="w-full bg-slate-50 border border-slate-300 rounded-lg text-sm px-3 py-2 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red font-medium">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Allegati Automatici</label>
+                    <div class="bg-slate-100 border border-slate-200 rounded-lg p-2.5 flex items-center gap-3 text-xs text-slate-700 font-mono">
+                        <i class="fa-solid fa-file-pdf text-red-600 text-lg"></i>
+                        <div class="truncate">
+                            <span class="font-bold block" id="attachment-name">EstrattoConto_Rendicontazione_PA.pdf</span>
+                            <span class="text-slate-400 text-[10px]">Report Telerik firmato digitalmente (Simulazione)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">Messaggio di Accompagnamento</label>
+                    <textarea id="emailBody" rows="4" class="w-full bg-slate-50 border border-slate-300 rounded-lg text-xs p-3 text-slate-800 focus:ring-2 focus:ring-caritas-red focus:border-caritas-red">Spett.le Ente,
+Si trasmette in allegato l'estratto conto relativo alle fatture quietanzate e ai rispettivi estremi di pagamento per il prosieguo della pratica di liquidazione.
+
+Cordiali saluti,
+Ufficio Controlling - Fondazione Solidarietà Caritas Firenze</textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex justify-end gap-2">
+                    <button type="button" onclick="closeMailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-lg text-xs">Annulla</button>
+                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i> Invia Transmissione
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-2xl z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3 border border-slate-700 no-print">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+        <div id="toast-message" class="text-xs font-medium">Operazione completata con successo.</div>
+    </div>
+
+    <!-- DATABASE MOCK & LOGICA JS -->
+    <script>
+        // Database Mock delle Fatture dei Fornitori con associazione Commessa
+        const DATABASE_FATTURE = [
+            {
+                id: 1,
+                commessaKey: 'ACC_2026',
+                commessaNome: 'Accoglienza Straordinaria 2026',
+                pa: 'Comune di Firenze - Servizi Sociali',
+                cigCup: 'CIG: Z123456789',
+                fornitoreKey: 'FORN_01',
+                fornitoreNome: 'Cooperativa Servizi Toscana Soc. Coop.',
+                numFattura: 'FT-2026/089',
+                dataFattura: '15/01/2026',
+                dataPagamento: '2026-02-10',
+                descrizione: 'Servizio gestione strutture accoglienza migranti gen-2026',
+                importo: 14500.00,
+                estremiPagamento: 'TRN: 030691234567890123456789',
+                banca: 'Intesa Sanpaolo - c/c dedicato PA'
+            },
+            {
+                id: 2,
+                commessaKey: 'ACC_2026',
+                commessaNome: 'Accoglienza Straordinaria 2026',
+                pa: 'Comune di Firenze - Servizi Sociali',
+                cigCup: 'CIG: Z123456789',
+                fornitoreKey: 'FORN_02',
+                fornitoreNome: 'Forniture Alimentari Fiorentine Srl',
+                numFattura: 'FA-554/2026',
+                dataFattura: '28/01/2026',
+                dataPagamento: '2026-02-15',
+                descrizione: 'Fornitura generi alimentari primari centri accoglienza',
+                importo: 6230.50,
+                estremiPagamento: 'TRN: 030699876543210987654321',
+                banca: 'Intesa Sanpaolo - c/c dedicato PA'
+            },
+            {
+                id: 3,
+                commessaKey: 'MENSA_FI',
+                commessaNome: 'Mensa Cittadina S. Francesco',
+                pa: 'Regione Toscana - Welfare & Coesione',
+                cigCup: 'CUP: B987654321',
+                fornitoreKey: 'FORN_05',
+                fornitoreNome: 'Catering Solidale Italia',
+                numFattura: 'FAT-1022',
+                dataFattura: '05/02/2026',
+                dataPagamento: '2026-02-28',
+                descrizione: 'Pasti caldi preparati per mensa sociale periodo gennaio',
+                importo: 18400.00,
+                estremiPagamento: 'CRO: 88473625109',
+                banca: 'Banca Cambiano - c/c dedicato PA'
+            },
+            {
+                id: 4,
+                commessaKey: 'MENSA_FI',
+                commessaNome: 'Mensa Cittadina S. Francesco',
+                pa: 'Regione Toscana - Welfare & Coesione',
+                cigCup: 'CUP: B987654321',
+                fornitoreKey: 'FORN_03',
+                fornitoreNome: 'Toscana Energia & Servizi SpA',
+                numFattura: 'UT-99831',
+                dataFattura: '10/02/2026',
+                dataPagamento: '2026-03-01',
+                descrizione: 'Fornitura gas metano e energia elettrica mensa gen-feb',
+                importo: 3120.80,
+                estremiPagamento: 'TRN: 010203040506070809101112',
+                banca: 'Banca Cambiano - c/c dedicato PA'
+            },
+            {
+                id: 5,
+                commessaKey: 'EMERG_ABIT',
+                commessaNome: 'Emergenza Abitativa Comune FI',
+                pa: 'Comune di Firenze - Casa e Sociale',
+                cigCup: 'CIG: 9876543210',
+                fornitoreKey: 'FORN_04',
+                fornitoreNome: 'Consorzio Manutenzioni & Edilizia',
+                numFattura: 'F-2026-012',
+                dataFattura: '12/02/2026',
+                dataPagamento: '2026-03-05',
+                descrizione: 'Interventi manutenzione straordinaria alloggi temporanei',
+                importo: 8900.00,
+                estremiPagamento: 'TRN: 050403020109080706050403',
+                banca: 'CR Firenze - c/c dedicato PA'
+            },
+            {
+                id: 6,
+                commessaKey: 'EMERG_FREDDO',
+                commessaNome: 'Piano Freddo Invernale',
+                pa: 'Società della Salute Firenze',
+                cigCup: 'CIG: 4567891230',
+                fornitoreKey: 'FORN_01',
+                fornitoreNome: 'Cooperativa Servizi Toscana Soc. Coop.',
+                numFattura: 'FT-2026/142',
+                dataFattura: '20/02/2026',
+                dataPagamento: '2026-03-10',
+                descrizione: 'Presidio notturno e accoglienza straordinaria freddo',
+                importo: 5400.00,
+                estremiPagamento: 'CRO: 47382910238',
+                banca: 'Intesa Sanpaolo - c/c dedicato PA'
+            }
+        ];
+
+        // Stato Globale dell'Applicazione
+        let currentZoom = 100;
+        let filteredData = [...DATABASE_FATTURE];
+
+        // Inizializzazione al caricamento della pagina
+        window.onload = function() {
+            renderReport(DATABASE_FATTURE, false);
+        };
+
+        // Formattatore Moneta
+        function formatCurrency(val) {
+            return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(val);
+        }
+
+        // Formattatore Data ISO in IT
+        function formatDateIT(dateStr) {
+            if(!dateStr) return '';
+            const parts = dateStr.split('-');
+            if(parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            return dateStr;
+        }
+
+        // Aggiorna dinamicamente i fornitori nel filtro in base alla commessa scelta
+        function updateFornitoreOptions() {
+            const commessaVal = document.getElementById('commessa').value;
+            const fornitoreSelect = document.getElementById('fornitore');
+            
+            // Ripristina tutte le opzioni
+            Array.from(fornitoreSelect.options).forEach(opt => opt.hidden = false);
+
+            if(commessaVal !== 'ALL') {
+                const fornitoriInCommessa = DATABASE_FATTURE
+                    .filter(item => item.commessaKey === commessaVal)
+                    .map(item => item.fornitoreKey);
+
+                Array.from(fornitoreSelect.options).forEach(opt => {
+                    if(opt.value !== 'ALL' && !fornitoriInCommessa.includes(opt.value)) {
+                        opt.hidden = true;
+                    }
+                });
+            }
+        }
+
+        // Applicazione dei Filtri per Rendicontazione
+        function applyFilters(e) {
+            if(e) e.preventDefault();
+
+            const commessaVal = document.getElementById('commessa').value;
+            const fornitoreVal = document.getElementById('fornitore').value;
+            const dateFromVal = document.getElementById('dateFrom').value;
+            const dateToVal = document.getElementById('dateTo').value;
+
+            filteredData = DATABASE_FATTURE.filter(item => {
+                // Filtro Commessa
+                if(commessaVal !== 'ALL' && item.commessaKey !== commessaVal) return false;
+                
+                // Filtro Fornitore
+                if(fornitoreVal !== 'ALL' && item.fornitoreKey !== fornitoreVal) return false;
+
+                // Filtro Data Da
+                if(dateFromVal && item.dataPagamento < dateFromVal) return false;
+
+                // Filtro Data A
+                if(dateToVal && item.dataPagamento > dateToVal) return false;
+
+                return true;
+            });
+
+            const isFiltered = (commessaVal !== 'ALL' || fornitoreVal !== 'ALL' || dateFromVal !== '' || dateToVal !== '');
+            
+            // Aggiorna UI Badge Filtri
+            const filterBadge = document.getElementById('filter-badge-status');
+            if(isFiltered) {
+                filterBadge.className = "text-xs bg-amber-500 text-slate-900 font-semibold px-2.5 py-1 rounded-full font-mono";
+                filterBadge.innerText = "Modalità: Rendicontazione PA Mirata";
+            } else {
+                filterBadge.className = "text-xs bg-slate-700 text-slate-200 px-2.5 py-1 rounded-full font-mono";
+                filterBadge.innerText = "Modalità: Estratto Conto Standard";
+            }
+
+            renderReport(filteredData, isFiltered, { commessaVal, fornitoreVal, dateFromVal, dateToVal });
+        }
+
+        // Reset dei Filtri all'Estratto Conto Standard
+        function resetFilters() {
+            document.getElementById('filterForm').reset();
+            updateFornitoreOptions();
+            filteredData = [...DATABASE_FATTURE];
+            
+            const filterBadge = document.getElementById('filter-badge-status');
+            filterBadge.className = "text-xs bg-slate-700 text-slate-200 px-2.5 py-1 rounded-full font-mono";
+            filterBadge.innerText = "Modalità: Estratto Conto Standard";
+
+            renderReport(DATABASE_FATTURE, false);
+            showToast("Ripristinato Estratto Conto Standard integrale", "info");
+        }
+
+        // Renderizza la Griglia del Report stile Telerik
+        function renderReport(data, isFiltered, filterObj = {}) {
+            const tbody = document.getElementById('report-table-body');
+            tbody.innerHTML = '';
+
+            let totalSum = 0;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="p-8 text-center text-slate-400 italic">
+                            <i class="fa-solid fa-folder-open text-3xl mb-2 block"></i>
+                            Nessun movimento o fattura trovata con i filtri applicati.
+                        </td>
+                    </tr>
+                `;
+            } else {
+                data.forEach((item, index) => {
+                    totalSum += item.importo;
+                    const rowClass = (index % 2 === 1) ? 'telerik-row-alt telerik-row' : 'telerik-row';
+
+                    const tr = document.createElement('tr');
+                    tr.className = `${rowClass} text-slate-800 transition-colors`;
+                    tr.innerHTML = `
+                        <td class="p-2.5 border border-slate-300 font-mono text-[11px] font-semibold">${formatDateIT(item.dataPagamento)}</td>
+                        <td class="p-2.5 border border-slate-300 font-bold text-slate-900">${item.numFattura}</td>
+                        <td class="p-2.5 border border-slate-300 text-slate-600">${item.dataFattura}</td>
+                        <td class="p-2.5 border border-slate-300 font-medium">${item.fornitoreNome}</td>
+                        <td class="p-2.5 border border-slate-300 text-slate-600">${item.descrizione}</td>
+                        <td class="p-2.5 border border-slate-300 text-right font-mono font-bold text-slate-900">${formatCurrency(item.importo)}</td>
+                        <td class="p-2.5 border border-slate-300 font-mono text-[10px] text-slate-700">
+                            <div>${item.estremiPagamento}</div>
+                            <div class="text-[9px] text-slate-400">${item.banca}</div>
+                        </td>
+                        <td class="p-2.5 border border-slate-300 text-center">
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                                <i class="fa-solid fa-check mr-1 text-[8px]"></i> QUIETANZATO
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            // Aggiorna Totale
+            document.getElementById('table-total-amount').innerText = formatCurrency(totalSum);
+
+            // Aggiorna Intestazioni Report (Meta-dati PA)
+            const metaCommessa = document.getElementById('meta-commessa');
+            const metaCigCup = document.getElementById('meta-cig-cup');
+            const metaPa = document.getElementById('meta-pa');
+            const metaPaSub = document.getElementById('meta-pa-sub');
+            const metaFornitore = document.getElementById('meta-fornitore');
+            const metaPeriodo = document.getElementById('meta-periodo');
+            const reportBadge = document.getElementById('report-title-badge');
+
+            if (isFiltered && data.length > 0) {
+                // Se è filtrato per commessa / fornitore specifico
+                reportBadge.innerText = "PROPRIETARIO PA - ATTESTATION E/C";
+                
+                const first = data[0];
+                const commessaSel = document.getElementById('commessa').options[document.getElementById('commessa').selectedIndex].text;
+                const fornitoreSel = document.getElementById('fornitore').options[document.getElementById('fornitore').selectedIndex].text;
+
+                metaCommessa.innerText = (filterObj.commessaVal !== 'ALL') ? first.commessaNome : 'Selezione Multi-Commessa';
+                metaCigCup.innerText = (filterObj.commessaVal !== 'ALL') ? first.cigCup : 'Voci CIG/CUP multiple';
+                metaPa.innerText = first.pa;
+                metaPaSub.innerText = 'Rendicontazione Spesa Progetto Ufficiale';
+                
+                metaFornitore.innerText = (filterObj.fornitoreVal !== 'ALL') ? first.fornitoreNome : 'Tutti i Fornitori della commessa';
+                
+                let dalStr = filterObj.dateFromVal ? formatDateIT(filterObj.dateFromVal) : 'Inizio Progetto';
+                let alStr = filterObj.dateToVal ? formatDateIT(filterObj.dateToVal) : 'Oggi';
+                metaPeriodo.innerText = `Dal ${dalStr} al ${alStr}`;
+            } else {
+                // Estratto Conto Standard
+                reportBadge.innerText = "ESTRATTO CONTO GENERALE FATTURE PA";
+                metaCommessa.innerText = "Tutte le Commesse e Progetti Attivi";
+                metaCigCup.innerText = "CIG / CUP Vari di Progetto";
+                metaPa.innerText = "Pubbliche Amministrazioni Vari (Comune FI, Reg. Toscana, SdS)";
+                metaPaSub.innerText = "Estratto Conto Generale di Sviluppo";
+                metaFornitore.innerText = "Tutti i Fornitori (Vista Completa)";
+                metaPeriodo.innerText = "Tutti i movimenti contabili";
+            }
+        }
+
+        // Gestione Zoom Viewer
+        function changeZoom(delta) {
+            currentZoom = Math.max(70, Math.min(140, currentZoom + delta));
+            document.getElementById('zoom-level').innerText = currentZoom + '%';
+            const paper = document.getElementById('report-paper');
+            paper.style.transform = `scale(${currentZoom / 100})`;
+        }
+
+        // Stampa / Download PDF
+        function triggerPrint() {
+            window.print();
+        }
+
+        // Gestione Modale Email
+        function openMailModal() {
+            const modal = document.getElementById('mailModal');
+            const commessaText = document.getElementById('commessa').options[document.getElementById('commessa').selectedIndex].text;
+            const fornitoreText = document.getElementById('fornitore').options[document.getElementById('fornitore').selectedIndex].text;
+            
+            const subjectInput = document.getElementById('emailSubject');
+            const attachmentLabel = document.getElementById('attachment-name');
+
+            if(document.getElementById('commessa').value !== 'ALL') {
+                subjectInput.value = `Rendicontazione PA - Transmissione E/C Fatture per: ${commessaText}`;
+                attachmentLabel.innerText = `Rendicontazione_${document.getElementById('commessa').value}.pdf`;
+            } else {
+                subjectInput.value = `Rendicontazione PA - Transmissione Estratto Conto Fatture Caritas Firenze`;
+                attachmentLabel.innerText = `EstrattoConto_Generale_PA.pdf`;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeMailModal() {
+            document.getElementById('mailModal').classList.add('hidden');
+        }
+
+        function sendEmail(e) {
+            e.preventDefault();
+            closeMailModal();
+            const emailTo = document.getElementById('emailTo').value;
+            showToast(`Rendicontazione inviata con successo via PEC a ${emailTo}`, "success");
+        }
+
+        // Sistema di Notifica Toast
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+
+            if(type === "success") {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-lg";
+            } else if(type === "info") {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400 text-lg";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
